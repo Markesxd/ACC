@@ -18,5 +18,9 @@ int isOperator(char *token);
 
 int isValidIdentifier(char *token);
 
+int isDelimiter(char c);
+
+int isString(char c);
+
 int regex(char *expression, char *string);
 

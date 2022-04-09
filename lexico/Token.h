@@ -5,10 +5,8 @@
 #define SEPARATOR 3
 #define OPERATOR 4
 #define FLOAT 5
-#define OPEN_PARENTESIS 6
-#define CLOSE_PARENTESIS 7
-#define OPEN_CURLY 8
-#define CLOSE_CURLY 9
+#define DELIMITER 6
+#define STRING 7
 
 struct a {
     char token[30];

@@ -24,6 +24,7 @@ int eot(char c)
         c == ',' ||
         c == ';' ||
         c == '}' ||
+        c == '!' ||
         c == '{');
 }
 
@@ -40,6 +41,11 @@ int isWhiteNoise(char c)
         c == '\t');
 }
 
+int isString(char c)
+{
+    return c == '"';
+}
+
 int typify(char *token, char **vocab)
 {
     if (isReservedWord(token, vocab))
@@ -52,14 +58,8 @@ int typify(char *token, char **vocab)
         return OPERATOR;
     if (isSeparator(token))
         return SEPARATOR;
-    if (!strcmp(token, "("))
-        return OPEN_PARENTESIS;
-    if (!strcmp(token, ")"))
-        return CLOSE_PARENTESIS;
-    if (!strcmp(token, "{"))
-        return OPEN_CURLY;
-    if (!strcmp(token, "}"))
-        return CLOSE_CURLY;
+    if (isDelimiter(*token))
+        return DELIMITER;
     if (isValidIdentifier(token))
         return IDENTIFIER;
     return LEXIC_ERR;
@@ -126,6 +126,15 @@ int isValidIdentifier(char *token)
     return regex("^([A-Z]|[a-z]|_)([a-z]|[A-Z]|[0-9]|_)*$", token);
 }
 
+int isDelimiter(char c)
+{
+    return (
+        c == '(' ||
+        c == ')' ||
+        c == '{' ||
+        c == '}');
+}
+
 int regex(char *expression, char *string)
 {
     regex_t reg;
@@ -158,17 +167,11 @@ void printType(int type)
     case FLOAT:
         printf("FLOAT");
         break;
-    case OPEN_PARENTESIS:
-        printf("OPEN P.");
+    case DELIMITER:
+        printf("DELIMITER");
         break;
-    case CLOSE_PARENTESIS:
-        printf("CLOSE P.");
-        break;
-    case OPEN_CURLY:
-        printf("OPEN C.");
-        break;
-    case CLOSE_CURLY:
-        printf("CLOSE C.");
+    case STRING:
+        printf("STRING");
         break;
     default:
         printf("ERROR");
@@ -178,7 +181,8 @@ void printType(int type)
 void lexico(char *code)
 {
     int scout = 0, infantry = 0;
-    Tokens *list = (Tokens *)malloc(sizeof(Tokens) * 100);
+    int limit = 100;
+    Tokens *list = (Tokens *)malloc(sizeof(Tokens) * limit);
     int size = strlen(code);
     int numberOfTokens = 0;
     int line = 1, column = 1;
@@ -187,12 +191,19 @@ void lexico(char *code)
 
     while (infantry < size)
     {
+        if (numberOfTokens >= limit)
+        {
+            limit += 100;
+            list = (Tokens *)realloc(list, sizeof(Tokens) * limit);
+        }
+
         if (isWhiteNoise(code[infantry]))
         {
             infantry++;
             scout++;
             continue;
         }
+
         if (eol(code[infantry]))
         {
             column = 1;
@@ -201,10 +212,26 @@ void lexico(char *code)
             scout++;
             continue;
         }
+
+        if (isString(code[infantry]))
+        {
+            while (code[++scout] != '"' && scout <= size)
+                ;
+            list[numberOfTokens].column = column;
+            list[numberOfTokens].line = line;
+            strncpy(list[numberOfTokens].token, code + infantry, scout - infantry + 1);
+            list[numberOfTokens].type = STRING;
+            column = scout - infantry;
+            infantry = scout + 1;
+            numberOfTokens++;
+            continue;
+        }
+
         while (!eot(code[scout++]) && scout <= size)
             ;
 
         int n = scout - infantry - 1;
+
         if (n)
         {
             list[numberOfTokens].column = column;
