@@ -1,0 +1,1 @@
+int sizeOfFile(FILE *file);
