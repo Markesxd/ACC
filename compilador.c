@@ -19,29 +19,7 @@ int main(int argc, char *argv[]){
     }
     int n; 
     list = (Tokens*) lexico(code, &n);
-    printError(list, n);
+    printTokens(list, n);
     fclose(p);
     return 0;
 }
-
-//legaxi
-//  if(feof(p)) break;
-//     column++;
-//     if(eot(c)){
-//         if(token[0] == '\0') {
-//             cColumn = column;
-//             continue;
-//         }
-//         list[numberOfTokens].column = cColumn;
-//         list[numberOfTokens].line = line;
-//         list[numberOfTokens].type = 1;
-//         strcpy(list[numberOfTokens].token, token);
-//         if(eol(c)) line++;
-//         numberOfTokens++;
-//         sizeOfToken = 0;
-//         token[0] = '\0';
-//         cColumn = column;
-//         continue;
-//     }
-//     token[sizeOfToken++] = c;
-//     token[sizeOfToken] = '\0';

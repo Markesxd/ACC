@@ -118,7 +118,7 @@ int isSeparator(char *token)
 
 int isOperator(char *token)
 {
-    return regex("^[\\<\\>\\=\\+\\-\\*\\/\\%%]$", token);
+    return regex("^[\\!\\<\\>\\=\\+\\-\\*\\/\\%%]$", token);
 }
 
 int isValidIdentifier(char *token)
@@ -254,6 +254,31 @@ void *lexico(char *code, int *n)
             column = scout - infantry;
             infantry = scout + 1;
             numberOfTokens++;
+            continue;
+        }
+
+        if (code[infantry] == '/' && code[infantry + 1] == '/')
+        {
+            while (!eol(code[scout++]))
+                ;
+            line++;
+            column = 0;
+            infantry = scout;
+            continue;
+        }
+
+        if (code[infantry] == '/' && code[infantry + 1] == '*')
+        {
+            scout += 2;
+            while (code[scout] != '*' && code[++scout] != '/')
+            {
+                if(code[scout] == '\n'){
+                    line++;
+                    column = 0;
+                }
+            }
+            scout += 2;
+            infantry = scout;
             continue;
         }
 
