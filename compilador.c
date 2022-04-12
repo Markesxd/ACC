@@ -11,15 +11,15 @@ int main(int argc, char *argv[]){
     p = fopen(argv[1], "r");
     int sizeFile = sizeOfFile(p); 
     char *code = (char*) malloc(sizeof(char) * sizeFile);
-
+    Tokens *list;
     for(int i = 0; i < sizeFile; i++){
         char c;
         c = fgetc(p);
         code[i] = c;
     }
-
-    lexico(code);
-    
+    int n; 
+    list = (Tokens*) lexico(code, &n);
+    printError(list, n);
     fclose(p);
     return 0;
 }

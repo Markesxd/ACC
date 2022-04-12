@@ -178,7 +178,37 @@ void printType(int type)
     }
 }
 
-void lexico(char *code)
+void printTokens(void *data, int n)
+{
+    Tokens *list = (Tokens *)data;
+
+    for (int i = 0; i < n; i++)
+    {
+        printf("(%d x %d) ", list[i].line, list[i].column);
+        printType(list[i].type);
+        printf(" ");
+        puts(list[i].token);
+    }
+    printf("\n");
+}
+
+void printError(void *data, int n)
+{
+    Tokens *list = (Tokens *)data;
+    for (int i = 0; i < n; i++)
+    {
+        if (list[i].type == LEXIC_ERR)
+        {
+            printf("(%d x %d) ", list[i].line, list[i].column);
+            printf("Error: Invalid indentifier");
+            printf(" ");
+            puts(list[i].token);
+        }
+    }
+    printf("\n");
+}
+
+void *lexico(char *code, int *n)
 {
     int scout = 0, infantry = 0;
     int limit = 100;
@@ -257,12 +287,6 @@ void lexico(char *code)
         }
     }
 
-    for (int i = 0; i < numberOfTokens; i++)
-    {
-        printf("(%d x %d) ", list[i].line, list[i].column);
-        printType(list[i].type);
-        printf(" ");
-        puts(list[i].token);
-    }
-    printf("\n");
+    *n = numberOfTokens;
+    return list;
 }
