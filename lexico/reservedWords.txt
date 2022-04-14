@@ -1,7 +1,11 @@
 if
+else
 for
 while
 int
 char
 float
+void
 return
+break
+continue

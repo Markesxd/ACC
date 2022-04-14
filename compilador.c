@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "./lexico/Token.h"
+#include "Token.h"
 #include "./lexico/lexico.h"
 #include "general.h"
+#include "./sintatico/sintatico.h"
 
 int main(int argc, char *argv[]){
     FILE *p;
@@ -19,7 +20,7 @@ int main(int argc, char *argv[]){
     }
     int n; 
     list = (Tokens*) lexico(code, &n);
-    printTokens(list, n);
+    sintatico(list, n);
     fclose(p);
     return 0;
 }

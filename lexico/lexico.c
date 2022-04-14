@@ -3,7 +3,7 @@
 #include <string.h>
 #include <regex.h>
 #include "lexico.h"
-#include "Token.h"
+#include "../Token.h"
 #include "../general.h"
 
 int eot(char c)
@@ -74,7 +74,6 @@ void getReservedWords(char ***vocab)
         exit(1);
     }
     int numberOfWords = 10;
-    char *string = malloc(sizeof(char) * 31);
     (*vocab) = malloc(sizeof(char *) * numberOfWords);
     for (int i = 0; i < numberOfWords; i++)
     {
