@@ -8,7 +8,7 @@ make all
 ```
 ## Palavras Reservadas
 O compilador recebe uma lista de palavras reservadas do arquivo "reservedWords.txt", ele pode ser alterado caso se deseje modificar quais palavras reservadas o programa deve reconhecer. O arquivo deve manter o padrão de uma palavra por linha. <br>
-Por padrão as palavras resevadas são as seguintes
+Por padrão as palavras reseva   das são as seguintes
 - if
 - else
 - for

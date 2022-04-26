@@ -73,7 +73,8 @@ void getReservedWords(char ***vocab)
         perror("falha ao ler arquivo");
         exit(1);
     }
-    int numberOfWords = 10;
+
+    int numberOfWords = 11;
     (*vocab) = malloc(sizeof(char *) * numberOfWords);
     for (int i = 0; i < numberOfWords; i++)
     {
