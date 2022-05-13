@@ -313,5 +313,6 @@ void *lexico(char *code, int *n)
     }
 
     *n = numberOfTokens;
+    printError((void*) list, numberOfTokens);
     return list;
 }

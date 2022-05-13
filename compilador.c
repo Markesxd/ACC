@@ -21,7 +21,7 @@ int main(int argc, char *argv[]){
     int n; 
     list = (Tokens*) lexico(code, &n);
     printTokens(list, n);
-    // sintatico(list, n);
+    sintatico(list, n);
     fclose(p);
     return 0;
 }
