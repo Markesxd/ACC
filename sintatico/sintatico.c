@@ -12,13 +12,15 @@ void sintatico(Tokens *list, int numberOfTokens)
     int tracker = 0, base = 0;
     while (tracker < numberOfTokens - 1)
     {
-        analise(list, &tracker);
+        analyse(list, &tracker);
     }
-    printf("%s = %d\n", group[0].name, group[0].value);
+    for(int i = 0; i < groupSize; i++)
+        printf("%s = %.4f\n", group[i].name, group[i].value);
 }
 
-int analise(Tokens *list, int *tracker)
+int analyse(Tokens *list, int *tracker)
 {
+    if (list[*tracker].type == LEXIC_ERR) (*tracker)++;
     if (list[*tracker].type == RESERVED_WORD)
     {
         return filterReservedWord(list, tracker);
@@ -29,36 +31,36 @@ int analise(Tokens *list, int *tracker)
     }
 }
 
-int expression(Tokens *list, int *tracker)
+float expression(Tokens *list, int *tracker)
 {
-    int iValue = 0;
+    float value = 0;
     (*tracker)++;
     if (!strcmp(list[*tracker].token, "(") ||
         list[*tracker].type == IDENTIFIER ||
         list[*tracker].type == FLOAT ||
         list[*tracker].type == INT)
     {
-        iValue = T(list, tracker);
-        iValue += Eline(list, tracker);
-        return iValue;
+        value = T(list, tracker);
+        value += Eline(list, tracker);
+        return value;
     }
 }
 
-int T(Tokens *list, int *tracker)
+float T(Tokens *list, int *tracker)
 {
-    int iValue = 0;
+    float value = 0;
     if (!strcmp(list[*tracker].token, "(") ||
         list[*tracker].type == IDENTIFIER ||
         list[*tracker].type == FLOAT ||
         list[*tracker].type == INT)
     {
-        iValue = F(list, tracker);
-        iValue *= Tline(list, tracker);
-        return iValue;
+        value = F(list, tracker);
+        value *= Tline(list, tracker);
+        return value;
     }
 }
 
-int F(Tokens *list, int *tracker)
+float F(Tokens *list, int *tracker)
 {
     if (!strcmp(list[*tracker].token, "("))
     {
@@ -66,11 +68,17 @@ int F(Tokens *list, int *tracker)
     }
     if (list[*tracker].type == IDENTIFIER)
     {
-        return 0;
+        for(int i = 0; i < groupSize; i++)
+        {
+            (*tracker)++;
+            if(!strcmp(group[i].name, list[*tracker - 1].token))
+                return group[i].value;
+        }
     }
     if (list[*tracker].type == FLOAT)
     {
-        return atof(list[*tracker].token);
+        (*tracker)++;
+        return atof(list[*tracker - 1].token);
     }
     if (list[*tracker].type == INT)
     {
@@ -79,7 +87,7 @@ int F(Tokens *list, int *tracker)
     }
 }
 
-int Tline(Tokens *list, int *tracker)
+float Tline(Tokens *list, int *tracker)
 {
     if (!strcmp(list[*tracker].token, "+"))
     {
@@ -88,28 +96,30 @@ int Tline(Tokens *list, int *tracker)
     if (!strcmp(list[*tracker].token, "*"))
     {
         (*tracker)++;
-        int iValue = F(list, tracker);
-        iValue *= Tline(list, tracker);
-        return iValue;
+        float value = F(list, tracker);
+        value *= Tline(list, tracker);
+        return value;
     }
     if (!strcmp(list[*tracker].token, ")"))
     {
+        (*tracker)++;
         return 1;
     }
     return 1;
 }
 
-int Eline(Tokens *list, int *tracker)
+float Eline(Tokens *list, int *tracker)
 {
     if (!strcmp(list[*tracker].token, "+"))
-    {   
+    {
         (*tracker)++;
-        int iValue = T(list, tracker);
-        iValue += Eline(list, tracker);
-        return iValue;
+        float value = T(list, tracker);
+        value += Eline(list, tracker);
+        return value;
     }
     if (!strcmp(list[*tracker].token, ")"))
     {
+        (*tracker)++;
         return 0;
     }
     return 0;
@@ -141,7 +151,6 @@ int handleIntDeclaration(Tokens *list, int *tracker)
     }
     group[groupSize].name = list[(*tracker) - 1].token;
     group[groupSize].type = list[*tracker - 1].type;
-    // group[groupSize].value = (int *)malloc(sizeof(int));
     group[groupSize].value = 0;
     groupSize++;
     (*tracker)++;
@@ -150,6 +159,19 @@ int handleIntDeclaration(Tokens *list, int *tracker)
 
 int handleIf(Tokens *list, int *tracker)
 {
+    (*tracker)++;
+    if (!strcmp(list[*tracker].token, "("))
+    {
+        error(PAR_EXP_ERR);
+    }
+    float value = expression(list, tracker);
+    if(strcmp(list[(*tracker) - 1].token, ")"))
+    {
+        error(PAR_EXP_ERR);
+    }
+    if(!value){
+        while(list[*tracker].type != SEPARATOR) (*tracker)++;
+    }
 }
 
 int set(Tokens *list, int *tracker)
@@ -158,7 +180,7 @@ int set(Tokens *list, int *tracker)
     (*tracker)++;
     if (strcmp(list[*tracker].token, "="))
         return error(-1);
-    int value = expression(list, tracker);
+    float value = expression(list, tracker);
     for (int i = 0; i < groupSize; i++)
     {
         if (!strcmp(group[i].name, list[idPlace].token))
@@ -167,6 +189,11 @@ int set(Tokens *list, int *tracker)
             break;
         }
     }
+    if (list[*tracker].type != SEPARATOR)
+    {
+        error(SEP_EXP_ERR);
+    }
+    (*tracker)++;
 }
 
 int error(int code)

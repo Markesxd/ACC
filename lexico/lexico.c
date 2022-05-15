@@ -200,7 +200,7 @@ void printError(void *data, int n)
         if (list[i].type == LEXIC_ERR)
         {
             printf("(%d x %d) ", list[i].line, list[i].column);
-            printf("Error: Invalid indentifier");
+            printf("Lexic Error: Invalid indentifier");
             printf(" ");
             puts(list[i].token);
         }
