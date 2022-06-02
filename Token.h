@@ -1,4 +1,4 @@
-#define LEXIC_ERR -1
+#define LEXIC_ERR -2
 #define RESERVED_WORD 0
 #define IDENTIFIER 1
 #define INT 2

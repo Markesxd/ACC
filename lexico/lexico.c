@@ -118,7 +118,7 @@ int isSeparator(char *token)
 
 int isOperator(char *token)
 {
-    return regex("^[\\!\\<\\>\\=\\+\\-\\*\\/\\%%]$", token);
+    return regex("^[\\!\\<\\>\\=\\+\\*\\/\\%%\\-]$", token);
 }
 
 int isValidIdentifier(char *token)
@@ -199,9 +199,8 @@ void printError(void *data, int n)
     {
         if (list[i].type == LEXIC_ERR)
         {
-            printf("(%d x %d) ", list[i].line, list[i].column);
-            printf("Lexic Error: Invalid indentifier");
-            printf(" ");
+            printf("%d:%d:", list[i].line, list[i].column);
+            printf("Lexic Error: Invalid indentifier ");
             puts(list[i].token);
         }
     }
@@ -312,7 +311,14 @@ void *lexico(char *code, int *n)
         }
     }
 
+    list[numberOfTokens].column = -1;
+    list[numberOfTokens].line = -1;
+    strcpy(list[numberOfTokens].token, "$");
+    list[numberOfTokens].type = EOF;
+
     *n = numberOfTokens;
+
     printError((void*) list, numberOfTokens);
+
     return list;
 }
