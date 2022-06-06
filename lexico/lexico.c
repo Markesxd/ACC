@@ -25,6 +25,8 @@ int eot(char c)
         c == ';' ||
         c == '}' ||
         c == '!' ||
+        c == '|' ||
+        c == '&' ||
         c == '{');
 }
 
@@ -44,6 +46,11 @@ int isWhiteNoise(char c)
 int isString(char c)
 {
     return c == '"';
+}
+
+int isChar(char c)
+{
+    return c == '\'';
 }
 
 int typify(char *token, char **vocab)
@@ -92,7 +99,7 @@ void getReservedWords(char ***vocab)
 
 int isReservedWord(char *token, char **vocab)
 {
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 11; i++)
     {
         if (!strcmp(vocab[i], token))
             return 1;
@@ -118,7 +125,7 @@ int isSeparator(char *token)
 
 int isOperator(char *token)
 {
-    return regex("^[\\!\\<\\>\\=\\+\\*\\/\\%%\\-]$", token);
+    return regex("^[\\|\\&\\!\\<\\>\\=\\+\\*\\/\\%%\\-]$", token);
 }
 
 int isValidIdentifier(char *token)
@@ -131,6 +138,7 @@ int isDelimiter(char c)
     return (
         c == '(' ||
         c == ')' ||
+        c == ',' ||
         c == '{' ||
         c == '}');
 }
@@ -204,7 +212,6 @@ void printError(void *data, int n)
             puts(list[i].token);
         }
     }
-    printf("\n");
 }
 
 void *lexico(char *code, int *n)
@@ -256,6 +263,23 @@ void *lexico(char *code, int *n)
             continue;
         }
 
+        if (isChar(code[infantry]))
+        {
+             while (code[++scout] != '\'' && scout <= size)
+                ;
+            int n = scout - infantry + 1;
+            list[numberOfTokens].column = column;
+            list[numberOfTokens].line = line;
+            strncpy(list[numberOfTokens].token, code + infantry, n);
+            list[numberOfTokens].type = CHAR;
+            column = scout - infantry;
+            infantry = scout + 1;
+            numberOfTokens++;
+            if(n > 4)
+                printf("%d:%d: Warning: character constant too long for its type\n", line, column);
+            continue;
+        }
+
         if (code[infantry] == '/' && code[infantry + 1] == '/')
         {
             while (!eol(code[scout++]))
@@ -271,7 +295,8 @@ void *lexico(char *code, int *n)
             scout += 2;
             while (code[scout] != '*' && code[++scout] != '/')
             {
-                if(code[scout] == '\n'){
+                if (code[scout] == '\n')
+                {
                     line++;
                     column = 0;
                 }
@@ -297,7 +322,7 @@ void *lexico(char *code, int *n)
         column += scout - infantry;
         infantry = scout;
 
-        if (!isWhiteNoise(code[scout - 1]))
+        if (!(isWhiteNoise(code[scout - 1]) || eol(code[scout - 1])))
         {
             list[numberOfTokens].column = column - 1;
             list[numberOfTokens].line = line;
@@ -318,7 +343,7 @@ void *lexico(char *code, int *n)
 
     *n = numberOfTokens;
 
-    printError((void*) list, numberOfTokens);
+    printError((void *)list, numberOfTokens);
 
     return list;
 }

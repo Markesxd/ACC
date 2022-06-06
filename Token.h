@@ -7,6 +7,7 @@
 #define FLOAT 5
 #define DELIMITER 6
 #define STRING 7
+#define CHAR 8
 
 struct a {
     char token[30];

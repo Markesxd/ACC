@@ -12,6 +12,8 @@ void printTokens(void *list, int n);
 
 void printError(void *data, int n);
 
+int isChar(char c);
+
 int isInt(char *token);
 
 int isFloat(char *token);
