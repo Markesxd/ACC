@@ -5,6 +5,6 @@ int main()
 {
     int i;
     char a = 'a';
-    printf("%c\n", a);
+    printf("%ld\n", sizeof(long));
     return 0;
 }

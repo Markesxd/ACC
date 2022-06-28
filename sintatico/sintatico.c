@@ -4,13 +4,18 @@
 #include "../Token.h"
 #include "../sintatico/sintatico.h"
 
-Variable group[100];
-int groupSize = 0;
+Variable variables[100];
+int numberOfVariables = 0;
 
 void sintatico(Tokens *list, int numberOfTokens)
 {
     int tracker = 0;
     code(list, &tracker);
+    checkIfUsed();
+    for (int i = 0; i < numberOfVariables; i++)
+    {
+        printf("%s = %.2f\n", variables[i].name, variables[i].value);
+    }
 }
 
 int code(Tokens *list, int *tracker)
@@ -106,7 +111,7 @@ int command(Tokens *list, int *tracker, int inLoop)
     return -1;
 }
 
-int expression(Tokens *list, int *tracker)
+double expression(Tokens *list, int *tracker)
 {
     if (!strcmp(list[*tracker].token, "(") ||
         !strcmp(list[*tracker].token, "-") ||
@@ -116,9 +121,10 @@ int expression(Tokens *list, int *tracker)
         list[*tracker].type == INT ||
         list[*tracker].type == LEXIC_ERR)
     {
-        E(list, tracker);
-        Xline(list, tracker);
-        return 0;
+        double value = 0;
+        value = X2(list, tracker, value);
+        value = Xline(list, tracker, value);
+        return value;
     }
     if (!strcmp(list[*tracker].token, ">") ||
         !strcmp(list[*tracker].token, "<") ||
@@ -133,8 +139,8 @@ int expression(Tokens *list, int *tracker)
     {
         error(UNE_TKN_ERR, list[*tracker].line, list[*tracker].column);
         (*tracker)++;
-        E(list, tracker);
-        Xline(list, tracker);
+        X2(list, tracker, 0);
+        Xline(list, tracker, 0);
         return -1;
     }
     error(EX_EXP_ERR, list[*tracker].line, list[*tracker].column);
@@ -142,30 +148,92 @@ int expression(Tokens *list, int *tracker)
     return -1;
 }
 
-int Xline(Tokens *list, int *tracker)
+double X2line(Tokens *list, int *tracker, double prevValue)
 {
-    if (!strcmp(list[*tracker].token, ">") ||
-        !strcmp(list[*tracker].token, "<") ||
-        !strcmp(list[*tracker].token, "!") ||
-        !strcmp(list[*tracker].token, "="))
+    if (!strcmp(list[*tracker].token, "<"))
     {
-        if(!strcmp(list[*tracker].token, "!") ||
-        !strcmp(list[*tracker].token, "="))
+        (*tracker)++;
+        if (!strcmp(list[*tracker].token, "="))
         {
             (*tracker)++;
-            if(strcmp(list[*tracker].token, "="))
-            {
-                error(OP_EXP_ERR, list[*tracker].line, list[*tracker].column);
-
-            }
+            double value = E(list, tracker);
+            value = prevValue <= value;
+            value = X2line(list, tracker, value);
+            return value;
+        }
+        double value = E(list, tracker);
+        value = prevValue < value;
+        value = X2line(list, tracker, value);
+        return value;
+    }
+    if (!strcmp(list[*tracker].token, ">"))
+    {
+        (*tracker)++;
+        if (!strcmp(list[*tracker].token, "="))
+        {
+            (*tracker)++;
+            double value = E(list, tracker);
+            value = prevValue >= value;
+            value = X2line(list, tracker, value);
+            return value;
+        }
+        double value = E(list, tracker);
+        value = prevValue > value;
+        value = X2line(list, tracker, value);
+        return value;
+    }
+    if (!strcmp(list[*tracker].token, "!"))
+    {
+        (*tracker)++;
+        if (strcmp(list[*tracker].token, "="))
+        {
+            error(OP_EXP_ERR, list[*tracker].line, list[*tracker].column);
             (*tracker)--;
         }
         (*tracker)++;
-        X2line(list, tracker);
-        E(list, tracker);
-        Xline(list, tracker);
-        return 0;
+        double value = E(list, tracker);
+        value = prevValue != value;
+        value = X2line(list, tracker, value);
+        return value;
     }
+    if (!strcmp(list[*tracker].token, "="))
+    {
+        (*tracker)++;
+        if (strcmp(list[*tracker].token, "="))
+        {
+            error(OP_EXP_ERR, list[*tracker].line, list[*tracker].column);
+            (*tracker)--;
+        }
+        (*tracker)++;
+        double value = E(list, tracker);
+        value = prevValue == value;
+        value = X2line(list, tracker, value);
+        return value;
+    }
+
+    return prevValue;
+}
+
+double X2(Tokens *list, int *tracker, double prevValue)
+{
+    if (!strcmp(list[*tracker].token, "(") ||
+        !strcmp(list[*tracker].token, "-") ||
+        !strcmp(list[*tracker].token, "!") ||
+        list[*tracker].type == IDENTIFIER ||
+        list[*tracker].type == FLOAT ||
+        list[*tracker].type == INT ||
+        list[*tracker].type == LEXIC_ERR)
+    {
+        double value;
+        value = E(list, tracker);
+        value = X2line(list, tracker, value);
+        return value;
+    }
+    return prevValue;
+}
+
+double Xline(Tokens *list, int *tracker, double prevValue)
+{
     if (!strcmp(list[*tracker].token, "&"))
     {
         (*tracker)++;
@@ -176,9 +244,10 @@ int Xline(Tokens *list, int *tracker)
         }
         (*tracker)++;
 
-        E(list, tracker);
-        Xline(list, tracker);
-        return 0;
+        double value = X2(list, tracker, prevValue);
+        value = prevValue && value;
+        value = Xline(list, tracker, value);
+        return value;
     }
     if (!strcmp(list[*tracker].token, "|"))
     {
@@ -189,24 +258,16 @@ int Xline(Tokens *list, int *tracker)
             (*tracker)--;
         }
         (*tracker)++;
-        E(list, tracker);
-        Xline(list, tracker);
-        return 0;
+        double value = X2(list, tracker, prevValue);
+        value = prevValue || value;
+        value = Xline(list, tracker, value);
+        return value;
     }
 
-    return 0;
+    return prevValue;
 }
 
-int X2line(Tokens *list, int *tracker)
-{
-    if (!strcmp(list[*tracker].token, "="))
-    {
-        (*tracker)++;
-    }
-    return 0;
-}
-
-int E(Tokens *list, int *tracker)
+double E(Tokens *list, int *tracker)
 {
     if (!strcmp(list[*tracker].token, "(") ||
         !strcmp(list[*tracker].token, "-") ||
@@ -216,16 +277,15 @@ int E(Tokens *list, int *tracker)
         list[*tracker].type == INT ||
         list[*tracker].type == LEXIC_ERR)
     {
-        int ret = T(list, tracker);
-        if(ret < 0)
-            return ret;
-        Eline(list, tracker);
-        return 0;
+        double value;
+        value = T(list, tracker);
+        value += Eline(list, tracker);
+        return value;
     }
     return -1;
 }
 
-int T(Tokens *list, int *tracker)
+double T(Tokens *list, int *tracker)
 {
     if (!strcmp(list[*tracker].token, "(") ||
         !strcmp(list[*tracker].token, "-") ||
@@ -235,53 +295,70 @@ int T(Tokens *list, int *tracker)
         list[*tracker].type == INT ||
         list[*tracker].type == LEXIC_ERR)
     {
-        int ret = F(list, tracker);
-        if (ret < 0)
-            return ret;
-        ret = Tline(list, tracker);
-        return ret;
+        double value = F(list, tracker);
+        value *= Tline(list, tracker, value);
+        return value;
     }
     error(TER_EXP_ERR, list[*tracker].line, list[*tracker].column);
-    Tline(list, tracker);
+    Tline(list, tracker, -1);
     return -1;
 }
 
-int F(Tokens *list, int *tracker)
+double F(Tokens *list, int *tracker)
 {
-    if (!strcmp(list[*tracker].token, "!") ||
-        !strcmp(list[*tracker].token, "-"))
+    int inverted = 0, denied = 0;
+    if (!strcmp(list[*tracker].token, "-"))
     {
         (*tracker)++;
+        inverted = 1;
+    }
+    else if (!strcmp(list[*tracker].token, "!"))
+    {
+        (*tracker)++;
+        denied = 1;
     }
     if (!strcmp(list[*tracker].token, "("))
     {
         (*tracker)++;
-        expression(list, tracker);
+        double value = expression(list, tracker);
         if (!strcmp(list[*tracker].token, ")"))
         {
             (*tracker)++;
-            return 0;
+            return value;
         }
         error(PAR_EXP_ERR, list[*tracker].line, list[*tracker].column);
-        return PAR_EXP_ERR;
+        if (denied)
+            return !value;
+        if (inverted)
+            return -value;
+        return value;
     }
-    if (list[*tracker].type == IDENTIFIER ||
-        list[*tracker].type == INT ||
+    if (list[*tracker].type == INT ||
         list[*tracker].type == FLOAT)
     {
-        // for (int i = 0; i < groupSize; i++)
-        // {
-        //     (*tracker)++;
-        //     if (!strcmp(group[i].name, list[*tracker - 1].token))
-        //         return group[i].value;
-        // }
+        double value = atof(list[*tracker].token);
         (*tracker)++;
-        return 0;
+        if (denied)
+            return !value;
+        if (inverted)
+            return -value;
+        return value;
     }
-    if (list[*tracker].type == LEXIC_ERR)
+    if (list[*tracker].type == IDENTIFIER ||
+        list[*tracker].type == LEXIC_ERR)
     {
+        if (!isDeclared(list[*tracker]))
+        {
+            error(NOT_DEC_ERR, list[*tracker].line, list[*tracker].column);
+        }
+        makeUsed(list[*tracker].token);
+        double value = getValue(list[*tracker].token);
         (*tracker)++;
-        return 0;
+        if (denied)
+            return !value;
+        if (inverted)
+            return -value;
+        return value;
     }
     if (list[*tracker].type == EOF)
     {
@@ -292,7 +369,7 @@ int F(Tokens *list, int *tracker)
     return -1;
 }
 
-int Tline(Tokens *list, int *tracker)
+double Tline(Tokens *list, int *tracker, int prevValue)
 {
     if (!strcmp(list[*tracker].token, "+") ||
         !strcmp(list[*tracker].token, "-") ||
@@ -305,20 +382,32 @@ int Tline(Tokens *list, int *tracker)
         !strcmp(list[*tracker].token, "|") ||
         !strcmp(list[*tracker].token, ";"))
     {
-        return 0;
+        return 1;
     }
-    if (!strcmp(list[*tracker].token, "*") ||
-        !strcmp(list[*tracker].token, "/") ||
-        list[*tracker].token[0] == '%')
+    if (!strcmp(list[*tracker].token, "*"))
     {
         (*tracker)++;
-        F(list, tracker);
-        Tline(list, tracker);
-        return 0;
+        double value = F(list, tracker);
+        value *= Tline(list, tracker, value);
+        return value;
+    }
+    if (!strcmp(list[*tracker].token, "/"))
+    {
+        (*tracker)++;
+        double value = F(list, tracker);
+        value *= Tline(list, tracker, value);
+        return 1 / value;
+    }
+    if (list[*tracker].token[0] == '%')
+    {
+        (*tracker)++;
+        double value = F(list, tracker);
+        value *= Tline(list, tracker, value);
+        return (double)(prevValue % (int)value) / prevValue;
     }
     if (!strcmp(list[*tracker].token, ")"))
     {
-        return 0;
+        return 1;
     }
     if (list[*tracker].type == EOF)
     {
@@ -331,30 +420,30 @@ int Tline(Tokens *list, int *tracker)
     {
         error(OP_EXP_ERR, list[*tracker].line, list[*tracker].column);
         F(list, tracker);
-        Tline(list, tracker);
-        return 0;
+        Tline(list, tracker, -1);
+        return -1;
     }
     // error(UNE_TKN_ERR, list[*tracker].line, list[*tracker].column);
-    return UNE_TKN_ERR;    
+    return UNE_TKN_ERR;
 }
 
-int Eline(Tokens *list, int *tracker)
+double Eline(Tokens *list, int *tracker)
 {
     if (!strcmp(list[*tracker].token, "+"))
     {
         (*tracker)++;
 
-        T(list, tracker);
-        Eline(list, tracker);
-        return 0;
+        double value = T(list, tracker);
+        value += Eline(list, tracker);
+        return value;
     }
     if (!strcmp(list[*tracker].token, "-"))
     {
         (*tracker)++;
 
-        T(list, tracker);
-        Eline(list, tracker);
-        return 0;
+        double value = T(list, tracker);
+        value += Eline(list, tracker);
+        return -value;
     }
     if (!strcmp(list[*tracker].token, ")") ||
         !strcmp(list[*tracker].token, ">") ||
@@ -386,33 +475,43 @@ int declaration(Tokens *list, int *tracker)
         error(ID_EXP_ERR, list[*tracker].line, list[*tracker].column);
         // (*tracker)--;
     }
+    int idPlace = *tracker;
+    if (isDeclared(list[idPlace]))
+    {
+        error(RE_DEC_ERR, list[idPlace].line, list[idPlace].column);
+    }
+    strcpy(variables[numberOfVariables].name, list[idPlace].token);
+    variables[numberOfVariables].type = list[idPlace].type;
+    variables[numberOfVariables].line = list[idPlace].line;
+    variables[numberOfVariables].column = list[idPlace].column;
+    variables[numberOfVariables].value = 0;
+    numberOfVariables++;
     (*tracker)++;
 
-    A(list, tracker);
+    A(list, tracker, idPlace);
 
     if (list[*tracker].type != SEPARATOR)
     {
         error(SEP_EXP_ERR, list[*tracker].line, list[*tracker].column);
         (*tracker)--;
     }
-    // group[groupSize].name = list[(*tracker) - 1].token;
-    // group[groupSize].type = list[*tracker - 1].type;
-    // group[groupSize].value = 0;
-    // groupSize++;
     (*tracker)++;
     return 0;
 }
 
-int A(Tokens *list, int *tracker)
+int A(Tokens *list, int *tracker, int idPlace)
 {
     if (!strcmp(list[*tracker].token, "="))
     {
         (*tracker)++;
-
+        double value;
         if (list[*tracker].type == CHAR)
             (*tracker)++;
         else
-            expression(list, tracker);
+            value = expression(list, tracker);
+
+        variables[numberOfVariables - 1].isInitialized = 1;
+        variables[numberOfVariables - 1].value = value;
 
         Aline(list, tracker);
         return 0;
@@ -426,6 +525,7 @@ int A(Tokens *list, int *tracker)
 
 int Aline(Tokens *list, int *tracker)
 {
+    int idPlace;
     if (!strcmp(list[*tracker].token, ","))
     {
         (*tracker)++;
@@ -435,10 +535,16 @@ int Aline(Tokens *list, int *tracker)
             error(ID_EXP_ERR, list[*tracker].line, list[*tracker].column);
             // (*tracker)--;
         }
+        idPlace = *tracker;
+        strcpy(variables[numberOfVariables].name, list[idPlace].token);
+        variables[numberOfVariables].type = list[idPlace].type;
+        variables[numberOfVariables].line = list[idPlace].line;
+        variables[numberOfVariables].column = list[idPlace].column;
+        numberOfVariables++;
         (*tracker)++;
     }
 
-    A(list, tracker);
+    A(list, tracker, idPlace);
 
     return 0;
 }
@@ -476,7 +582,10 @@ int block(Tokens *list, int *tracker, int inLoop)
     {
         (*tracker)++;
         if (!strcmp(list[*tracker].token, "}"))
+        {
+            (*tracker)++;
             return 0;
+        }
         command(list, tracker, inLoop);
         bline(list, tracker, inLoop);
         return 0;
@@ -504,7 +613,6 @@ int bline(Tokens *list, int *tracker, int inLoop)
 
 int set(Tokens *list, int *tracker, int inFor)
 {
-    // int idPlace = *tracker;
     if (!strcmp(list[*tracker].token, "+"))
     {
         (*tracker)++;
@@ -520,6 +628,11 @@ int set(Tokens *list, int *tracker, int inFor)
             error(ID_EXP_ERR, list[*tracker].line, list[*tracker].column);
             (*tracker)--;
         }
+        if (!isDeclared(list[*tracker]))
+        {
+            error(NOT_DEC_ERR, list[*tracker].line, list[*tracker].column);
+        }
+        makeUsed(list[*tracker].token);
         (*tracker)++;
 
         if (!inFor)
@@ -550,6 +663,11 @@ int set(Tokens *list, int *tracker, int inFor)
             error(ID_EXP_ERR, list[*tracker].line, list[*tracker].column);
             (*tracker)--;
         }
+        if (!isDeclared(list[*tracker]))
+        {
+            error(NOT_DEC_ERR, list[*tracker].line, list[*tracker].column);
+        }
+        makeUsed(list[*tracker].token);
         (*tracker)++;
 
         if (!inFor)
@@ -565,6 +683,12 @@ int set(Tokens *list, int *tracker, int inFor)
         return 0;
     }
 
+    if (!isDeclared(list[*tracker]))
+    {
+        error(NOT_DEC_ERR, list[*tracker].line, list[*tracker].column);
+    }
+    makeUsed(list[*tracker].token);
+    int idPlace = *tracker;
     (*tracker)++;
 
     if (!strcmp(list[*tracker].token, "+"))
@@ -622,10 +746,16 @@ int set(Tokens *list, int *tracker, int inFor)
     }
     (*tracker)++;
 
+    double value;
     if (list[*tracker].type == CHAR)
+    {
+        value = list[*tracker].token[0];
         (*tracker)++;
+    }
     else
-        expression(list, tracker);
+    {
+        value = expression(list, tracker);
+    }
 
     if (!inFor)
     {
@@ -637,6 +767,10 @@ int set(Tokens *list, int *tracker, int inFor)
 
         (*tracker)++;
     }
+
+    makeInitialized(list[idPlace].token);
+    int varPlace = getVarPlace(list[idPlace].token);
+    variables[varPlace].value = value;
     return 0;
 }
 
@@ -683,9 +817,15 @@ int loop(Tokens *list, int *tracker)
 int error(int code, int line, int column)
 {
     if (line == -1)
-        printf("$: Sintatic error: ");
+        printf("$: ");
     else
-        printf("%d:%d: Sintatic error: ", line, column);
+        printf("%d:%d: ", line, column);
+
+    if (code > -9)
+        printf("Sintatic error: ");
+    else
+        printf("Semantic error: ");
+
     switch (code)
     {
     case ID_EXP_ERR:
@@ -715,5 +855,77 @@ int error(int code, int line, int column)
     case LP_ONL_ERR:
         printf("Argument is restricted to a loop\n");
         break;
+    case NOT_DEC_ERR:
+        printf("Variable not declared\n");
+        break;
+    case RE_DEC_ERR:
+        printf("Redeclaration of Variable\n");
+        break;
+    case NOT_USD_ERR:
+        printf("Variable not used\n");
+        break;
+    }
+}
+
+int isDeclared(Tokens token)
+{
+    for (int i = 0; i < numberOfVariables; i++)
+    {
+        if (!strcmp(variables[i].name, token.token))
+            return 1;
+    }
+    return 0;
+}
+
+void checkIfUsed()
+{
+    for (int i = 0; i < numberOfVariables; i++)
+    {
+        if (!variables[i].isUsed)
+            error(NOT_USD_ERR, variables[i].line, variables[i].column);
+    }
+}
+
+void makeUsed(char *variable)
+{
+    for (int i = 0; i < numberOfVariables; i++)
+    {
+        if (!strcmp(variable, variables[i].name))
+        {
+            variables[i].isUsed = 1;
+            break;
+        }
+    }
+}
+
+double getValue(char *variable)
+{
+    for (int i = 0; i < numberOfVariables; i++)
+    {
+        if (!strcmp(variables[i].name, variable))
+        {
+            return variables[i].value;
+        }
+    }
+}
+
+int getVarPlace(char *variable)
+{
+    for (int i = 0; i < numberOfVariables; i++)
+    {
+        if (!strcmp(variable, variables[i].name))
+            return i;
+    }
+}
+
+void makeInitialized(char *variable)
+{
+    for (int i = 0; i < numberOfVariables; i++)
+    {
+        if (!strcasecmp(variable, variables[i].name))
+        {
+            variables[i].isInitialized = 1;
+            return;
+        }
     }
 }

@@ -6,12 +6,19 @@
 #define CUR_EXP_ERR -6
 #define EX_EXP_ERR -7
 #define TER_EXP_ERR -8
-#define LP_ONL_ERR - 9
+#define LP_ONL_ERR -9
+#define NOT_DEC_ERR -10
+#define RE_DEC_ERR -11
+#define NOT_USD_ERR -12
 
 struct b {
-    char* name;
+    char name[30];
     int type;
-    float value;
+    int isInitialized;
+    int isUsed;
+    int line;
+    int column;
+    double value;
 };
 
 typedef struct b Variable;
@@ -32,7 +39,7 @@ int bline(Tokens *list, int *tracker, int inLoop);
 
 int declaration(Tokens *list, int *tracker);
 
-int A(Tokens *list, int *tracker);
+int A(Tokens *list, int *tracker, int idPlace);
 
 int Aline(Tokens *list, int *tracker);
 
@@ -50,18 +57,32 @@ int code(Tokens *list, int *tracker);
 
 int command(Tokens *list, int *tracker, int inLoop);
 
-int expression(Tokens *list, int *tracker);
+double expression(Tokens *list, int *tracker);
 
-int T(Tokens *list, int *tracker);
+double T(Tokens *list, int *tracker);
 
-int E(Tokens *list, int *tracker);
+double E(Tokens *list, int *tracker);
 
-int Eline(Tokens *list, int *tracker);
+double Eline(Tokens *list, int *tracker);
 
-int Xline(Tokens *list, int *tracker);
+double Xline(Tokens *list, int *tracker, double prevValue);
 
-int X2line(Tokens *list, int *tracker);
+double X2(Tokens *list, int *tracker, double prevValue);
 
-int F(Tokens *list, int *tracker);
+double X2line(Tokens *list, int *tracker, double prevValue);
 
-int Tline(Tokens *list, int *tracker);
+double F(Tokens *list, int *tracker);
+
+double Tline(Tokens *list, int *tracker, int PrevValue);
+
+int isDeclared(Tokens token);
+
+void checkIfUsed();
+
+void makeUsed(char *variable);
+
+void makeInitialized(char *variable);
+
+int getVarPlace(char *variable);
+
+double getValue(char *variable);
