@@ -37,11 +37,11 @@ int block(Tokens *list, int *tracker, int inLoop);
 
 int bline(Tokens *list, int *tracker, int inLoop);
 
-int declaration(Tokens *list, int *tracker);
+int declaration(Tokens *list, int *tracker, int type);
 
-int A(Tokens *list, int *tracker, int idPlace);
+int A(Tokens *list, int *tracker, int idPlace, int type);
 
-int Aline(Tokens *list, int *tracker);
+int Aline(Tokens *list, int *tracker, int type);
 
 int charDeclaration(Tokens *list, int *tracker);
 
@@ -52,6 +52,8 @@ int Bline(Tokens *list, int *tracker);
 int set(Tokens *list, int *tracker, int inFor);
 
 int error(int code, int line, int column);
+
+int warning(int code, int line, int column);
 
 int code(Tokens *list, int *tracker);
 
@@ -86,3 +88,51 @@ void makeInitialized(char *variable);
 int getVarPlace(char *variable);
 
 double getValue(char *variable);
+
+void setValue(char *variable, double value);
+
+void gLoadImmediateVar(char *var);
+
+void writeText(char *str);
+
+void writeData(char *str);
+
+void jumpEqualsT0(char* label);
+
+void addiCumulative(double a);
+
+void addVar(char *label);
+
+void addiT1(double a);
+
+void addVarT1(char *label);
+
+void zeroT0();
+
+void zeroT1();
+
+void addt0t1();
+
+void subt0t1();
+
+void sw(char *label);
+
+void subiCumulative(double a);
+
+void subVar(char *label);
+
+void mulCumulative(double a);
+
+void mulVar(char *label);
+
+void divCumulative(double a);
+
+void divVar(char *label);
+
+void setT2T0();
+
+void setT0T2();
+
+void gt();
+
+void lt();
